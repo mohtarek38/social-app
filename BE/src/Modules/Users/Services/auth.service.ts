@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { randomInt } from "crypto";
-import { v4 as uuidv4 } from "uuid";
+import { randomInt, randomUUID } from "crypto";
 
 import { UserRepository, BlackListedTokensRepository } from "../../../DB/Repositories/repository.barrel";
 import { UserModel, BlackListedTokensModel } from "../../../DB/Models/models.barrel";
@@ -11,13 +10,14 @@ import {
   compareHash,
   emitter,
   verifyToken,
+  verifyGoogleToken,
   BadRequestException,
   ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from "../../../Utils/utils.barrel";
 import { ILoggedInRequest, IUser } from "../../../Common/Interfaces/user.interface";
-import { otpTypesEnum, emailTemplates, SignUpBodyType } from "../../../Common/common.barrel";
+import { otpTypesEnum, emailTemplates, SignUpBodyType, ProviderEnum, VALIDATION_RULES } from "../../../Common/common.barrel";
 import { generateToken } from "../../../Utils/Encryption/token.utils";
 import { SignOptions } from "jsonwebtoken";
 import { SuccessResponse } from "../../../Utils/Responses/response-helper.utils";
@@ -32,12 +32,12 @@ class AuthService {
     // Generate JWT access token
     const accesstoken = generateToken(payload, process.env.JWT_ACCESS_SECRET as string, {
       expiresIn: process.env.JWT_ACCESS_EXPIRATION as SignOptions["expiresIn"],
-      jwtid: uuidv4(),
+      jwtid: randomUUID(),
     });
     // Generate JWT refresh token
     const refreshtoken = generateToken(payload, process.env.JWT_REFRESH_SECRET as string, {
       expiresIn: process.env.JWT_REFRESH_EXPIRATION as SignOptions["expiresIn"],
-      jwtid: uuidv4(),
+      jwtid: randomUUID(),
     });
     return { accesstoken, refreshtoken };
   };
@@ -94,6 +94,9 @@ class AuthService {
     }
     if (user.isDeleted) {
       throw new UnauthorizedException("Your account has been deleted");
+    }
+    if (user.provider === ProviderEnum.GOOGLE) {
+      throw new BadRequestException("This account uses Google sign in");
     }
     const isPasswordValid = compareHash(password, user.password);
     if (!isPasswordValid) {
@@ -193,6 +196,72 @@ class AuthService {
       $pull: { otps: { type: otpTypesEnum.RESET_PASSWORD } },
     } as any);
     return res.status(200).json(SuccessResponse("Password reset successfully", 200));
+  };
+
+  ResendConfirmationOtp = async (req: Request, res: Response) => {
+    const { email } = req.body;
+    const user: IUser | null = await this.userRepo.findOneDocument({ email, isDeleted: false });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    if (user.isVerified) {
+      throw new BadRequestException("Email is already confirmed");
+    }
+    const otp = String(randomInt(100000, 999999));
+    const confirmationOtp = {
+      value: generateHash(otp),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      type: otpTypesEnum.CONFIRMATION,
+    };
+    // Replace the old confirmation OTP with the new one
+    const otps = (user.otps ?? []).filter((item) => item.type !== otpTypesEnum.CONFIRMATION);
+    await this.userRepo.findAndUpdateDocument(user._id, { otps: [...otps, confirmationOtp] });
+
+    emitter.emit("sendEmail", {
+      to: email,
+      subject: "Confirmation Email for Sign Up",
+      content: `Email sent to ${email} with OTP: ${otp}`,
+    });
+    return res.status(200).json(SuccessResponse("Confirmation OTP sent successfully", 200));
+  };
+
+  SignInWithGoogle = async (req: Request, res: Response) => {
+    const { idToken } = req.body;
+    let payload;
+    try {
+      payload = await verifyGoogleToken(idToken);
+    } catch (error) {
+      throw new UnauthorizedException("Invalid Google token");
+    }
+    if (!payload?.email || !payload.email_verified) {
+      throw new UnauthorizedException("Google account email is not verified");
+    }
+
+    let user: IUser | null = await this.userRepo.findOneDocument({ email: payload.email });
+    if (user) {
+      if (user.isDeleted) {
+        throw new UnauthorizedException("Your account has been deleted");
+      }
+      if (user.provider !== ProviderEnum.GOOGLE) {
+        throw new ConflictException("This email is registered with a password, Please sign in with email and password");
+      }
+    } else {
+      // Fit Google names to our name length rules
+      const fitName = (name: string | undefined, fallback: string, rules: { min: number; max: number }) => {
+        const trimmed = (name ?? "").trim().slice(0, rules.max);
+        return trimmed.length >= rules.min ? trimmed : fallback;
+      };
+      user = await this.userRepo.createNewDocument({
+        firstName: fitName(payload.given_name, "Google", VALIDATION_RULES.firstName),
+        lastName: fitName(payload.family_name, "User", VALIDATION_RULES.lastName),
+        email: payload.email,
+        provider: ProviderEnum.GOOGLE,
+        googleId: payload.sub,
+        isVerified: true,
+      });
+    }
+    const { accesstoken, refreshtoken } = this.generateTokens(user);
+    return res.status(200).json({ message: "Signed in successfully", data: { tokens: { accesstoken, refreshtoken } } });
   };
 
 }

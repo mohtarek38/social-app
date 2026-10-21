@@ -31,7 +31,10 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     password: {
       type: String,
-      required: true,
+      // Google users don't have a password
+      required: function (this: IUser) {
+        return this.provider !== ProviderEnum.GOOGLE;
+      },
     },
     role: {
       type: String,

@@ -7,3 +7,4 @@ export * from "./Errors/exceptions.utils";
 export * from "./Services/s3-client.utils";
 export * from "./Pagination/pagination.utils";
 export * from "./Responses/response-helper.utils";
+export * from "./Security/cors.utils";

@@ -14,11 +14,13 @@ A social media backend built with **Node.js, Express 5, TypeScript and MongoDB**
 | Real-time       | Socket.IO                                                 |
 | Validation      | Zod                                                       |
 | File storage    | AWS S3 (pre-signed URLs), Multer                          |
+| Testing         | Jest, Supertest, mongodb-memory-server, GitHub Actions     |
 | Other           | Nodemailer (OTP emails), GraphQL (graphql-http), Morgan   |
 
 ## Features
 
-- **Authentication**: sign up and confirm the email with an OTP, sign in, refresh tokens (single-use, rotated), sign out with token blacklisting, and forget/reset password with an OTP.
+- **Authentication**: sign up and confirm the email with an OTP (with resend), sign in with email/password or **Google**, refresh tokens (single-use, rotated), sign out with token blacklisting, and forget/reset password with an OTP.
+- **CORS**: only origins listed in `CORS_WHITELIST` are allowed, for both the REST API and Socket.IO.
 - **Profiles**: view private and public profiles, update them, soft-delete an account.
 - **Profile pictures**: uploaded to AWS S3 and served with renewable pre-signed URLs.
 - **Friendships**: send, list and accept/reject friend requests; create group conversations.
@@ -33,6 +35,8 @@ A social media backend built with **Node.js, Express 5, TypeScript and MongoDB**
 
 ```
 BE/src
+├── app.ts           # Express app (routes, CORS, error handler)
+├── index.ts         # starts the server, DB and Socket.IO
 ├── Common/          # enums, interfaces, constants, email templates
 ├── DB/
 │   ├── Models/      # Mongoose schemas
@@ -43,6 +47,7 @@ BE/src
 ├── Modules/         # feature modules: controllers (routes) + services
 ├── Utils/           # encryption, tokens, errors, responses, S3, email
 └── Validators/      # Zod request schemas
+BE/tests/            # Jest + Supertest API tests
 FE/                  # plain HTML/jQuery client (login + chat)
 ```
 
@@ -61,6 +66,8 @@ Base URL: `http://localhost:5000/api`
 | POST   | `/auth/refresh-token`                |      | Get new tokens (refresh token in body) |
 | POST   | `/auth/forget-password`              |      | Send a reset password OTP      |
 | POST   | `/auth/reset-password`               |      | Reset password with the OTP    |
+| POST   | `/auth/resend-confirmation`          |      | Resend the confirmation OTP    |
+| POST   | `/auth/google`                       |      | Sign in with a Google `idToken` |
 | GET    | `/profile`                           |  ✓   | Get own profile                |
 | GET    | `/profile/public/:userId`            |  ✓   | Get a user's public profile    |
 | PUT    | `/profile/update`                    |  ✓   | Update profile                 |
@@ -110,6 +117,15 @@ npm run dev            # compiles TypeScript and starts with nodemon on :5000
 
 For a production-style run: `npm run build && npm start`.
 
+### Tests
+
+```bash
+cd BE
+npm test
+```
+
+The tests use Jest and Supertest against an in-memory MongoDB (mongodb-memory-server), so they don't need a database or a `.env` file. Google token checks are mocked, and OTPs are read from the email event instead of being sent. The first run downloads a MongoDB binary. GitHub Actions runs the same tests on every push and pull request.
+
 ### Frontend
 
 ```bash
@@ -124,9 +140,9 @@ Then open `FE/index.html` with a static server, for example the VS Code **Live S
 - [x] Comments and reactions
 - [x] Refresh-token endpoint
 - [x] Email confirmation and forget/reset password
-- [ ] Google OAuth sign-in
-- [ ] Restrict CORS to `CORS_WHITELIST`
-- [ ] Automated tests
+- [x] Google OAuth sign-in
+- [x] Restrict CORS to `CORS_WHITELIST`
+- [x] Automated tests
 
 ## License
 

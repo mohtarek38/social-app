@@ -2,7 +2,15 @@ import { Router } from "express";
 
 import AuthService from "../Services/auth.service";
 import { AuthenticationMiddleware, validationMiddleware } from "../../../Middlewares/middleware.barrel";
-import { signUpValidator, confirmEmailValidator, refreshTokenValidator, forgetPasswordValidator, resetPasswordValidator } from "../../../Validators";
+import {
+  signUpValidator,
+  confirmEmailValidator,
+  refreshTokenValidator,
+  forgetPasswordValidator,
+  resetPasswordValidator,
+  googleSignInValidator,
+  resendOtpValidator,
+} from "../../../Validators";
 
 const authController = Router();
 
@@ -22,7 +30,8 @@ authController.post("/forget-password", validationMiddleware(forgetPasswordValid
 authController.post("/reset-password", validationMiddleware(resetPasswordValidator), AuthService.ResetPassword);
 
 //Google OAuth
-
-//Resend
+authController.post("/google", validationMiddleware(googleSignInValidator), AuthService.SignInWithGoogle);
+//Resend Confirmation OTP
+authController.post("/resend-confirmation", validationMiddleware(resendOtpValidator), AuthService.ResendConfirmationOtp);
 
 export { authController };

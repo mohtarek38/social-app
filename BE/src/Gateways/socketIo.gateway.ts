@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
-import { verifyToken } from '../Utils/utils.barrel';
+import { corsOptions, verifyToken } from '../Utils/utils.barrel';
 import { ChatInitiation } from '../Modules/Chats/chat';
 
 export const connectedSockets = new Map<string, string[]>();
@@ -40,7 +40,7 @@ function socketDisconnection(socket: Socket) {
 }
 
 export const ioInitializer = (server: HttpServer) => {
-  io = new Server(server, { cors: { origin: '*' } });
+  io = new Server(server, { cors: corsOptions });
 
   io.use(socketAuthentication);
 

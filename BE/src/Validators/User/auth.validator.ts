@@ -39,6 +39,18 @@ export const refreshTokenValidator = {
   }),
 };
 
+export const googleSignInValidator = {
+  body: z.strictObject({
+    idToken: z.string().min(1, "Google id token is required"),
+  }),
+};
+
+export const resendOtpValidator = {
+  body: z.strictObject({
+    email: z.email(),
+  }),
+};
+
 export const forgetPasswordValidator = {
   body: z.strictObject({
     email: z.email(),
