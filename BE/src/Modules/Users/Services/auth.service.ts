@@ -86,7 +86,7 @@ class AuthService {
       { _id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, provider: user.provider, role: user.role },
       process.env.JWT_REFRESH_SECRET as string,
       {
-        expiresIn: process.env.JWT_ACCESS_EXPIRATION as SignOptions["expiresIn"],
+        expiresIn: process.env.JWT_REFRESH_EXPIRATION as SignOptions["expiresIn"],
         jwtid: uuidv4(),
       }
     );
