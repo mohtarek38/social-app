@@ -1,0 +1,5 @@
+export * from "./user.interface"
+export * from "./response.interface"
+export * from "./chat.interface"
+export * from "./post.interface"
+export * from "./comment.interface"
