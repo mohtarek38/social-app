@@ -24,3 +24,10 @@ export enum FriendShipStatusEnum {
   ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
 }
+export enum ReactTypeEnum {
+  LIKE = "LIKE",
+  LOVE = "LOVE",
+  HAHA = "HAHA",
+  SAD = "SAD",
+  ANGRY = "ANGRY",
+}

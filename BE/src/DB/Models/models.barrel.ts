@@ -5,3 +5,4 @@ export * from "./conversation.model";
 export * from "./messages.model";
 export * from "./post.model";
 export * from "./comments.model";
+export * from "./react.model";

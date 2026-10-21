@@ -18,11 +18,14 @@ A social media backend built with **Node.js, Express 5, TypeScript and MongoDB**
 
 ## Features
 
-- **Authentication**: sign up with an email OTP, sign in, and sign out with token blacklisting.
+- **Authentication**: sign up and confirm the email with an OTP, sign in, refresh tokens (single-use, rotated), sign out with token blacklisting, and forget/reset password with an OTP.
 - **Profiles**: view private and public profiles, update them, soft-delete an account.
 - **Profile pictures**: uploaded to AWS S3 and served with renewable pre-signed URLs.
 - **Friendships**: send, list and accept/reject friend requests; create group conversations.
-- **Posts**: create posts and get a paginated home feed.
+- **Posts**: create (with up to 3 S3 attachments and friend tags), update, delete, get by id, a user's posts, and a paginated home feed.
+- **Comments**: comment on posts and reply to comments (one level), edit, delete (by the comment owner or the post owner), and list.
+- **Reactions**: LIKE / LOVE / HAHA / SAD / ANGRY on posts and comments, with one react per user that can be changed or removed, and a count per type.
+- **Cleanup**: deleting a post also deletes its comments, replies, reactions and S3 files.
 - **Real-time chat**: authenticated Socket.IO connections, private messages and chat history, with multiple tabs per user supported.
 - **GraphQL**: an experimental `/graphql` endpoint (authenticated `listUsers` query).
 
@@ -54,6 +57,10 @@ Base URL: `http://localhost:5000/api`
 | POST   | `/auth/signup`                       |      | Register (sends OTP email)     |
 | POST   | `/auth/signin`                       |      | Get access + refresh tokens    |
 | POST   | `/auth/signout`                      |  ✓   | Blacklist the current token    |
+| POST   | `/auth/confirm-email`                |      | Confirm email with the OTP     |
+| POST   | `/auth/refresh-token`                |      | Get new tokens (refresh token in body) |
+| POST   | `/auth/forget-password`              |      | Send a reset password OTP      |
+| POST   | `/auth/reset-password`               |      | Reset password with the OTP    |
 | GET    | `/profile`                           |  ✓   | Get own profile                |
 | GET    | `/profile/public/:userId`            |  ✓   | Get a user's public profile    |
 | PUT    | `/profile/update`                    |  ✓   | Update profile                 |
@@ -66,7 +73,19 @@ Base URL: `http://localhost:5000/api`
 | POST   | `/profile/respond-friend-request`    |  ✓   | Accept / reject a request      |
 | POST   | `/profile/create-group`              |  ✓   | Create a group conversation    |
 | POST   | `/posts/add`                         |  ✓   | Create a post                  |
-| GET    | `/posts/home?page=1&limit=10`        |  ✓   | Paginated feed                 |
+| GET    | `/posts/home?page=1&limit=10`        |  ✓   | Paginated feed (newest first)  |
+| GET    | `/posts/:postId`                     |  ✓   | Get a post                     |
+| GET    | `/posts/user/:userId?page=1&limit=10`|  ✓   | A user's posts                 |
+| PUT    | `/posts/update/:postId`              |  ✓   | Update own post                |
+| DELETE | `/posts/delete/:postId`              |  ✓   | Delete own post                |
+| POST   | `/comments/add`                      |  ✓   | Comment on a post or reply to a comment |
+| PUT    | `/comments/update/:commentId`        |  ✓   | Edit own comment               |
+| DELETE | `/comments/delete/:commentId`        |  ✓   | Delete a comment and its replies |
+| GET    | `/comments/post/:postId`             |  ✓   | List a post's comments         |
+| GET    | `/comments/:commentId/replies`       |  ✓   | List a comment's replies       |
+| POST   | `/reacts/react`                      |  ✓   | Add or change a reaction       |
+| DELETE | `/reacts/remove/:refId`              |  ✓   | Remove own reaction            |
+| GET    | `/reacts/:refId`                     |  ✓   | List reactions with counts     |
 
 Authenticated routes expect the header `Authorization: Bearer <accessToken>`.
 
@@ -102,8 +121,10 @@ Then open `FE/index.html` with a static server, for example the VS Code **Live S
 
 ## Roadmap
 
-- [ ] Comments and reactions (routes are scaffolded in `Modules/Comments` and `Modules/Reacts`)
-- [ ] Refresh-token endpoint
+- [x] Comments and reactions
+- [x] Refresh-token endpoint
+- [x] Email confirmation and forget/reset password
+- [ ] Google OAuth sign-in
 - [ ] Restrict CORS to `CORS_WHITELIST`
 - [ ] Automated tests
 

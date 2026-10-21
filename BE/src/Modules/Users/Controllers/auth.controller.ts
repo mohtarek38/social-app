@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import AuthService from "../Services/auth.service";
 import { AuthenticationMiddleware, validationMiddleware } from "../../../Middlewares/middleware.barrel";
-import { signUpValidator } from "../../../Validators";
+import { signUpValidator, confirmEmailValidator, refreshTokenValidator, forgetPasswordValidator, resetPasswordValidator } from "../../../Validators";
 
 const authController = Router();
 
@@ -13,10 +13,13 @@ authController.post("/signin", AuthService.SignIn);
 //Signout
 authController.post("/signout", AuthenticationMiddleware, AuthService.SignOut);
 //Confirmation Email
-
+authController.post("/confirm-email", validationMiddleware(confirmEmailValidator), AuthService.ConfirmEmail);
+//Refresh Token
+authController.post("/refresh-token", validationMiddleware(refreshTokenValidator), AuthService.RefreshToken);
 //Forget Password
-
+authController.post("/forget-password", validationMiddleware(forgetPasswordValidator), AuthService.ForgetPassword);
 //Reset Password
+authController.post("/reset-password", validationMiddleware(resetPasswordValidator), AuthService.ResetPassword);
 
 //Google OAuth
 

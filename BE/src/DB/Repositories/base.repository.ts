@@ -19,9 +19,13 @@ export abstract class BaseRepository<T> {
 
   updateMultipleDocuments() {}
 
-  deleteOneDocument() {}
+  async deleteOneDocument(filters: FilterQuery<T>) {
+    return await this.model.deleteOne(filters);
+  }
 
-  deleteMultipleDocuments() {}
+  async deleteMultipleDocuments(filters: FilterQuery<T>) {
+    return await this.model.deleteMany(filters);
+  }
 
   async findAndUpdateDocument(_id: mongoose.Schema.Types.ObjectId, update: Partial<T>, options?: QueryOptions<T>): Promise<T | null> {
     return await this.model.findByIdAndUpdate(_id, update, { new: true, ...options });

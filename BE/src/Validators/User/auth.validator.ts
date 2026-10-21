@@ -25,3 +25,36 @@ export const signUpValidator = {
       { path: ["DOB"], message: "Invalid year of birth" }
     ),
 };
+
+export const confirmEmailValidator = {
+  body: z.strictObject({
+    email: z.email(),
+    otp: z.string().length(6, "OTP must be 6 digits"),
+  }),
+};
+
+export const refreshTokenValidator = {
+  body: z.strictObject({
+    refreshToken: z.string().min(1, "Refresh token is required"),
+  }),
+};
+
+export const forgetPasswordValidator = {
+  body: z.strictObject({
+    email: z.email(),
+  }),
+};
+
+export const resetPasswordValidator = {
+  body: z
+    .strictObject({
+      email: z.email(),
+      otp: z.string().length(6, "OTP must be 6 digits"),
+      password: z.string().min(VALIDATION_RULES.password.min).max(VALIDATION_RULES.password.max),
+      passwordConfirmation: z.string(),
+    })
+    .refine((data) => data.password === data.passwordConfirmation, {
+      path: ["passwordConfirmation"],
+      message: "Passwords do not match",
+    }),
+};

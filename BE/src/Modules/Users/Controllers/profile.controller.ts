@@ -14,7 +14,7 @@ profileController.get("/", AuthenticationMiddleware, ProfileService.getLoggedInP
 profileController.get("/public/:userId", ProfileService.getPublicProfile);
 
 //Get User Profile Picture
-profileController.get("/get-profile-picture", AuthenticationMiddleware, ProfileService.updateProfile);
+profileController.get("/get-profile-picture", AuthenticationMiddleware, ProfileService.getProfilePictureSignedUrl);
 
 //Update User Profile
 profileController.put("/update", validationMiddleware(updateProfileValidator), AuthenticationMiddleware, ProfileService.updateProfile);
